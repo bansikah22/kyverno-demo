@@ -35,8 +35,8 @@ kubectl apply -f workloads/kubesrv-deployment.yaml
 
 This demo uses [kubesrv](https://github.com/bansikah22/kubesrv) - a lightweight C server for testing Kubernetes deployments.
 
-- **Image:** `bansikah/kubesrv:latest`
-- **Port:** 8080
+- **Image:** `bansikah/kubesrv:1.0.0`
+- **Port:** 80
 - **Purpose:** Minimal test server for policy validation
 
 ## Policy Examples
