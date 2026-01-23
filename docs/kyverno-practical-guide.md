@@ -82,27 +82,50 @@ That means:
 
 ## The main types of Kyverno policies (quick tour)
 
-Kyverno supports several policy types. You don't need all of them on day one.
+Kyverno supports multiple policy types for different use cases:
 
-### 1. Validation policies
-Block configurations that don't meet your rules.
+### Core Policy Types
 
-*"This should never be allowed."*
+**ClusterPolicy** - Cluster-wide policies (used in our examples)
+- Validate, mutate, generate resources
+- Verify image signatures and attestations
 
-### 2. Mutation policies
-Automatically fix or enhance resources.
+**Policy** - Namespace-scoped policies
+- Same capabilities as ClusterPolicy but limited to specific namespaces
 
-*"If it's missing, add it for them."*
+### Specialized Policy Types (v1.14+)
 
-### 3. Generation policies
-Create related resources automatically.
+**ValidatingPolicy** - Pure validation
+- Validate Kubernetes resources or JSON payloads
+- Lightweight alternative to full ClusterPolicy
 
-*"If this exists, make sure that exists too."*
+**ImageValidatingPolicy** - Image security
+- Verify container image signatures and attestations
+- Focused on supply chain security
 
-### 4. Image verification policies
-Ensure images are trusted and signed.
+**MutatingPolicy** (v1.15+) - Resource modification
+- Mutate new or existing resources
+- Dedicated mutation capabilities
 
-*"Only run what we trust."*
+**GeneratingPolicy** (v1.15+) - Resource creation
+- Create or clone resources based on flexible triggers
+- Advanced resource generation
+
+### Utility Types
+
+**CleanupPolicy** - Resource cleanup
+- Delete matching resources based on a schedule
+- Automated cluster maintenance
+
+**DeletingPolicy** (v1.15+) - Scheduled deletion
+- Delete matching resources based on a schedule
+- Enhanced cleanup capabilities
+
+**CEL Libraries** - Extended functions
+- Extended CEL functions for complex policy logic
+- Advanced policy features
+
+For this guide, we'll focus on **ClusterPolicy** - the most versatile option that covers validation, mutation, and generation in one resource type.
 
 ## Prerequisites
 
@@ -152,25 +175,25 @@ Running privileged containers is one of the fastest ways to break your security 
 **Policy: deny privileged Pods**
 
 ```yaml
-apiVersion: kyverno.io/v1
-kind: ClusterPolicy
+apiVersion: kyverno.io/v1        # Kyverno API version
+kind: ClusterPolicy              # Policy applies cluster-wide
 metadata:
   name: disallow-privileged-containers
 spec:
-  validationFailureAction: Enforce
+  validationFailureAction: Enforce # Block resources that fail validation
   rules:
     - name: no-privileged
       match:
         resources:
           kinds:
-            - Pod
+            - Pod                # Apply this rule to Pod resources
       validate:
         message: "Privileged containers are not allowed"
         pattern:
           spec:
             containers:
               - securityContext:
-                  privileged: false
+                  privileged: false # Require privileged to be false
 ```
 
 **Result:** the Pod never reaches the cluster.
@@ -187,13 +210,13 @@ kind: ClusterPolicy
 metadata:
   name: require-resource-limits
 spec:
-  validationFailureAction: Enforce
+  validationFailureAction: Enforce # Block pods without limits
   rules:
     - name: check-limits
       match:
         resources:
           kinds:
-            - Pod
+            - Pod                # Target Pod resources
       validate:
         message: "CPU and memory limits are required"
         pattern:
@@ -201,8 +224,8 @@ spec:
             containers:
               - resources:
                   limits:
-                    cpu: "?*"
-                    memory: "?*"
+                    cpu: "?*"      # Require any CPU limit value
+                    memory: "?*"   # Require any memory limit value
 ```
 
 This turns best practices into cluster rules, not documentation.
@@ -224,15 +247,41 @@ spec:
       match:
         resources:
           kinds:
-            - Pod
-      mutate:
-        patchStrategicMerge:
+            - Pod                # Apply to Pod resources
+      mutate:                    # Modify the resource
+        patchStrategicMerge:     # Merge this config into the Pod
           spec:
             securityContext:
-              runAsNonRoot: true
+              runAsNonRoot: true # Automatically add non-root security
 ```
 
 Developers don't change anything — the cluster becomes safer by default.
+
+## Policy Scope: ClusterPolicy vs Policy
+
+Kyverno offers two policy scopes:
+
+**ClusterPolicy** (used in our examples):
+- Applies cluster-wide to all namespaces
+- Perfect for organization-wide security standards
+- Requires cluster-admin permissions
+
+**Policy** (namespace-scoped):
+- Applies only to resources in a specific namespace
+- Ideal for team-specific rules
+- Can be managed by namespace admins
+
+```yaml
+apiVersion: kyverno.io/v1
+kind: Policy                    # Namespace-scoped policy
+metadata:
+  name: team-specific-limits
+  namespace: development        # Only applies to 'development' namespace
+spec:
+  # Same rules as ClusterPolicy
+```
+
+Choose based on your governance model.
 
 ## Audit vs Enforce: adopting Kyverno safely
 
@@ -328,6 +377,28 @@ kubectl get cpol
 kubectl describe cpol disallow-privileged-containers
 ```
 
+## Conclusion
+
+Kyverno brings policy enforcement to Kubernetes without the complexity. By using familiar YAML syntax and integrating natively with the Kubernetes API, it makes security and governance accessible to every team member.
+
+The key takeaways:
+
+- **Start small**: Begin with a few critical policies in Audit mode
+- **Use ClusterPolicy** for organization-wide standards, **Policy** for team-specific rules
+- **Leverage mutation** to help teams rather than just block them
+- **Combine with GitOps** for policy-as-code workflows
+
+Kyverno doesn't try to solve every problem — it solves policy enforcement the Kubernetes way. And that focus is exactly what makes it powerful.
+
+## References
+
+- [Official Kyverno Documentation](https://kyverno.io/docs/)
+- [Kyverno Policy Library](https://kyverno.io/policies/)
+- [Kyverno GitHub Repository](https://github.com/kyverno/kyverno)
+- [Kubernetes Admission Controllers](https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/)
+- [Demo Repository](https://github.com/bansikah22/kyverno-demo)
+- [KubeServ Test Application](https://github.com/bansikah22/kubesrv)
+
 ---
 
-*If you enjoyed this introduction, the official Kyverno documentation is the best next stop. This article is just the beginning.*
+*Ready to implement Kyverno in your cluster? Start with the demo repository and gradually expand your policy coverage. Remember: the best policy is one that helps teams succeed while keeping the cluster secure.*
