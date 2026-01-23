@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: bad-kubesrv
+  labels:
+    app: kubesrv
+    owner: demo
+spec:
+  containers:
+    - name: kubesrv
+      image: bansikah/kubesrv:latest
+      ports:
+        - containerPort: 80
+      securityContext:
+        privileged: true
+        runAsUser: 0
