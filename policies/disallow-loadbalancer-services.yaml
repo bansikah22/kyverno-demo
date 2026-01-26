@@ -1,0 +1,18 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: disallow-loadbalancer-services
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: block-loadbalancer-service
+      match:
+        resources:
+          kinds:
+            - Service
+      validate:
+        message: "Service type LoadBalancer is not allowed. Use ClusterIP or NodePort instead."
+        pattern:
+          spec:
+            type: "!LoadBalancer"
