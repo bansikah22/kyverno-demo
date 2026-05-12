@@ -8,7 +8,7 @@ metadata:
 spec:
   containers:
     - name: kubesrv
-      image: bansikah/kubesrv:1.0.0
+      image: bansikah/kubesrv:latest
       ports:
         - containerPort: 80
       securityContext:
