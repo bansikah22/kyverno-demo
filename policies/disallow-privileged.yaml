@@ -3,7 +3,6 @@ kind: ClusterPolicy
 metadata:
   name: disallow-privileged-containers
 spec:
-  validationFailureAction: Enforce
   rules:
     - name: no-privileged
       match:
@@ -11,6 +10,7 @@ spec:
           kinds:
             - Pod
       validate:
+        failureAction: Enforce
         message: "Privileged containers are not allowed"
         pattern:
           spec:

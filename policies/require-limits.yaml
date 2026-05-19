@@ -3,7 +3,6 @@ kind: ClusterPolicy
 metadata:
   name: require-resource-limits
 spec:
-  validationFailureAction: Enforce
   rules:
     - name: check-limits
       match:
@@ -11,6 +10,7 @@ spec:
           kinds:
             - Pod
       validate:
+        failureAction: Enforce
         message: "CPU and memory limits are required"
         pattern:
           spec:

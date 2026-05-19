@@ -93,7 +93,9 @@ Kyverno supports multiple policy types for different use cases:
 **Policy** - Namespace-scoped policies
 - Same capabilities as ClusterPolicy but limited to specific namespaces
 
-### Specialized Policy Types (v1.14+)
+### Specialized Policy Types (recent Kyverno releases)
+
+> Note: these specialized policy resources use the `policies.kyverno.io` API group.
 
 **ValidatingPolicy** - Pure validation
 - Validate Kubernetes resources or JSON payloads
@@ -113,9 +115,9 @@ Kyverno supports multiple policy types for different use cases:
 
 ### Utility Types
 
-**CleanupPolicy** - Resource cleanup
+**CleanupPolicy** (deprecated) - Legacy resource cleanup
 - Delete matching resources based on a schedule
-- Automated cluster maintenance
+- Kept for compatibility; prefer `DeletingPolicy` going forward
 
 **DeletingPolicy** (v1.15+) - Scheduled deletion
 - Delete matching resources based on a schedule
@@ -180,7 +182,6 @@ kind: ClusterPolicy              # Policy applies cluster-wide
 metadata:
   name: disallow-privileged-containers
 spec:
-  validationFailureAction: Enforce # Block resources that fail validation
   rules:
     - name: no-privileged
       match:
@@ -188,6 +189,7 @@ spec:
           kinds:
             - Pod                # Apply this rule to Pod resources
       validate:
+        failureAction: Enforce   # Block resources that fail validation
         message: "Privileged containers are not allowed"
         pattern:
           spec:
@@ -210,7 +212,6 @@ kind: ClusterPolicy
 metadata:
   name: require-resource-limits
 spec:
-  validationFailureAction: Enforce # Block pods without limits
   rules:
     - name: check-limits
       match:
@@ -218,6 +219,7 @@ spec:
           kinds:
             - Pod                # Target Pod resources
       validate:
+        failureAction: Enforce   # Block pods without limits
         message: "CPU and memory limits are required"
         pattern:
           spec:
@@ -292,6 +294,9 @@ You can start in **Audit** mode:
 - No workloads are blocked
 
 Then move to **Enforce** when teams are ready.
+
+Use `validate.failureAction` per rule (`Audit` or `Enforce`).
+The older policy-level `spec.validationFailureAction` is deprecated.
 
 This makes Kyverno realistic for existing clusters.
 
